@@ -1,6 +1,10 @@
 import RPi.GPIO as GPIO
 import time # .sleep, .time
 
+""" Set up GPIO on the Raspberry Pi
+http://www.raspberrypi.org/documentation/usage/gpio/
+Use .Board instead of .BCM for basic numbered ports
+"""
 GPIO.setmode(GPIO.BCM) # Broadcom SOC channel
 
 # Program Toggle
@@ -36,25 +40,29 @@ GPIO.output(S1out,GPIO.LOW)
 GPIO.output(S2out,GPIO.LOW)
 time.sleep(1)
 
+
 def main():
     while True:
-        if not GPIO.input(toggl):
-            continue
-        qNum = 5
+        stop() # Stop motors if they were already spinning
+        while not GPIO.input(toggl):
+            pass
+        """if not GPIO.input(toggl):
+            continue"""
+        qNum = 4 # number of measurements used when evaluating average distance
         while True:
             forward()
-            time.sleep(0.5)
+            time.sleep(0.5) # check sensors every 0.5 seconds
             green = get_dist_green()
             blue = get_dist_blue()
             print green
             print blue
             print "\n\n"
-            if not GPIO.input(toggl):
+            if not GPIO.input(toggl): # check toggle switch
                 break
             if green < 50.0 or blue < 50.0:
                 gCount = 100.0
                 bCount = 100.0
-                while gCount > 30.0 and bCount > 30.0:
+                while gCount > 40.0 and bCount > 40.0:
                     gCount = 0.0
                     bCount = 0.0
                     for x in range(qNum):
@@ -85,7 +93,6 @@ def main():
                 stop()
                 print "finished turn"
                 if not GPIO.input(toggl):
-                    # GPIO.cleanup()
                     break
 
 def rForward():
@@ -125,6 +132,8 @@ def left():
     rForward()
 
 def get_dist_green():
+    """ Declaring pulse_start/pulse_end earlier seems to help with error of
+    undeclared variables in pulse_declaration = pulse_end - pulse_start """
     pulse_start = 0.0
     pulse_end = 100000
     GPIO.output(S1out,GPIO.HIGH)
@@ -152,6 +161,5 @@ def get_dist_blue():
     distance = pulse_duration * 17150
     return distance
 
+# Run the main program loop
 main()
-
-
